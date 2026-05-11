@@ -7,7 +7,6 @@ import Menu from './pages/Menu';
 import Pedidos from './pages/Pedidos';
 import Reservas from './pages/Reservas';
 import Caja from './pages/Caja';
-import './index.css';
 
 function PrivateRoute({ children, roles }) {
   const { user } = useApp();

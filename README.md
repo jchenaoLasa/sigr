@@ -1,149 +1,98 @@
 # SIGR — Sistema Integral de Gestión de Restaurante
 
-Aplicación web desarrollada en React + Vite para la gestión completa de un restaurante: autenticación por roles, menú digital, pedidos en tiempo real, reservas y cierre de caja.
+A role-based restaurant management SPA built with React 19 and Material Design (MUI).
 
 ---
 
-## Requisitos previos
+## Tech Stack
 
-| Herramienta | Versión mínima |
-|-------------|----------------|
-| Node.js     | 18.x o superior |
-| npm         | 9.x o superior  |
-| Git         | 2.x o superior  |
+| Layer      | Technology |
+|------------|------------|
+| Framework  | React 19 + Vite |
+| UI Library | MUI (Material UI) |
+| Routing    | React Router DOM v7 |
+| Icons      | Lucide React |
+| State      | React Context + Hooks |
+| Styling    | MUI `sx` prop + Emotion |
 
 ---
 
-## Instalación y ejecución
+## Features
 
-### 1. Clonar el repositorio
+- **Dashboard** — daily stats (orders, revenue, reservations, menu items), recent orders table and today's reservations.
+- **Menu** — card grid with category filters; admin can add, edit and delete dishes and categories.
+- **Orders** — order builder with cart panel, real-time status progression (`pendiente → preparando → listo → entregado`).
+- **Reservations** — reservation cards with date filter; admin can change status and manage all reservations.
+- **Cash Register** — daily revenue stats, delivered order details, top-selling dishes and end-of-day cash close.
+- **Role-based access** — each role sees only the pages relevant to them.
+
+---
+
+## Roles
+
+| Role     | Email                | Password | Access |
+|----------|----------------------|----------|--------|
+| Admin    | admin@sigr.com       | 1234     | All pages |
+| Mesero   | mesero@sigr.com      | 1234     | Menu, Orders, Reservations |
+| Cliente  | cliente@sigr.com     | 1234     | Menu, My Reservations |
+
+---
+
+## Installation
 
 ```bash
-git clone <url-del-repositorio>
+# Clone the repository
+git clone <repo-url>
 cd sigr
-```
 
-### 2. Instalar dependencias
-
-```bash
+# Install dependencies
 npm install
-```
 
-### 3. Iniciar en modo desarrollo
-
-```bash
+# Start the development server
 npm run dev
 ```
 
-La aplicación estará disponible en `http://localhost:5173`.
-
-### 4. Compilar para producción
-
-```bash
-npm run build
-```
-
-Los archivos compilados quedan en la carpeta `dist/`.
-
-### 5. Previsualizar la build de producción
-
-```bash
-npm run preview
-```
+The app will be available at `http://localhost:5173`.
 
 ---
 
-## Credenciales de acceso (modo demo)
+## Available Scripts
 
-| Rol           | Correo            | Contraseña |
-|---------------|-------------------|------------|
-| Administrador | admin@sigr.com    | 1234       |
-| Mesero        | mesero@sigr.com   | 1234       |
-| Cliente       | cliente@sigr.com  | 1234       |
-
----
-
-## Módulos del sistema
-
-### Autenticación
-- Inicio de sesión con correo y contraseña.
-- Tres roles con permisos diferenciados: **admin**, **mesero** y **cliente**.
-- Navegación y vistas filtradas automáticamente según el rol activo.
-
-### Menú Digital
-- Visualización de platos agrupados por categoría.
-- **Admin:** CRUD completo de platos (nombre, precio, descripción, disponibilidad) y categorías.
-- Filtro por categoría y marcado de platos no disponibles.
-
-### Pedidos
-- Creación de pedidos por mesa con carrito de selección.
-- Seguimiento en tiempo real por estados: `Pendiente → Preparando → Listo → Entregado`.
-- Filtro de pedidos por estado.
-- Visible solo para roles **admin** y **mesero**.
-
-### Reservas
-- Registro de reservas con nombre, teléfono, fecha, hora y número de personas.
-- Filtro por fecha.
-- Cambio de estado: `Confirmada`, `Completada`, `Cancelada`.
-- Los clientes solo ven y gestionan sus propias reservas.
-
-### Caja y Reportes
-- Estadísticas del día: ingresos totales, pedidos entregados, ticket promedio y pendientes.
-- Detalle de todos los pedidos entregados en la fecha seleccionada.
-- Ranking de los 5 platos más vendidos.
-- Cierre de caja con confirmación e historial de cierres anteriores.
-- Visible solo para el rol **admin**.
+| Script           | Description |
+|------------------|-------------|
+| `npm run dev`    | Start Vite development server |
+| `npm run build`  | Build for production |
+| `npm run preview`| Preview production build |
+| `npm run lint`   | Run ESLint |
 
 ---
 
-## Estructura del proyecto
+## Project Structure
 
 ```
 sigr/
-├── public/
 ├── src/
+│   ├── main.jsx            # Entry point — ThemeProvider + CssBaseline
+│   ├── App.jsx             # Router + role-based private routes
+│   ├── theme.js            # MUI custom theme
 │   ├── components/
-│   │   └── Layout.jsx          # Sidebar y navegación principal
+│   │   └── Layout.jsx      # Permanent sidebar drawer + main content
 │   ├── context/
-│   │   └── AppContext.jsx      # Estado global con React Context
-│   ├── pages/
-│   │   ├── Login.jsx           # Módulo de autenticación
-│   │   ├── Dashboard.jsx       # Panel de inicio y estadísticas
-│   │   ├── Menu.jsx            # Módulo de menú digital
-│   │   ├── Pedidos.jsx         # Módulo de pedidos
-│   │   ├── Reservas.jsx        # Módulo de reservas
-│   │   └── Caja.jsx            # Módulo de caja y reportes
-│   ├── App.jsx                 # Enrutamiento principal
-│   ├── main.jsx                # Punto de entrada
-│   └── index.css               # Estilos globales
-├── package.json
-├── vite.config.js
-├── README.md
+│   │   └── AppContext.jsx  # Global state (users, menu, orders, reservations)
+│   └── pages/
+│       ├── Login.jsx
+│       ├── Dashboard.jsx
+│       ├── Menu.jsx
+│       ├── Pedidos.jsx
+│       ├── Reservas.jsx
+│       └── Caja.jsx
 ├── CHANGELOG.md
-└── LICENSE.txt
+├── LICENSE
+└── README.md
 ```
 
 ---
 
-## Tecnologías utilizadas
+## License
 
-| Paquete             | Versión  | Propósito                          |
-|---------------------|----------|------------------------------------|
-| React               | 19.x     | Biblioteca de interfaz de usuario  |
-| Vite                | 8.x      | Build tool y servidor de desarrollo|
-| React Router DOM    | 7.x      | Enrutamiento del lado del cliente  |
-| Lucide React        | latest   | Iconografía                        |
-| React Context API   | —        | Gestión de estado global           |
-
----
-
-## Notas de desarrollo
-
-- El estado de la aplicación es **en memoria**; al recargar la página los datos vuelven a su estado inicial. Para persistencia se puede integrar `localStorage` o una API REST.
-- No requiere base de datos ni servidor backend para ejecutarse.
-
----
-
-## Licencia
-
-Este proyecto está licenciado bajo los términos de la **Licencia MIT**. Consulta el archivo [LICENSE.txt](LICENSE.txt) para más detalles.
+MIT — see [LICENSE](LICENSE) for details.

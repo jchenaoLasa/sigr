@@ -1,23 +1,26 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import {
+  Box, Button, Card, CardContent, Typography, Table, TableHead, TableBody,
+  TableRow, TableCell, TableFooter, Stack, Alert, Dialog, DialogTitle,
+  DialogContent, DialogActions, TextField, Divider, Chip,
+} from '@mui/material';
 import { BarChart3, DollarSign, ShoppingBag, TrendingUp, Lock } from 'lucide-react';
 
 export default function Caja() {
   const { orders, closedSales, closeCashRegister } = useApp();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [lastClosed, setLastClosed] = useState(null);
-  const [showConfirm, setShowConfirm] = useState(false);
+  const [showConfirm, setShowConfirm]   = useState(false);
 
   const deliveredOrders = orders.filter(o => o.status === 'entregado' && o.createdAt?.startsWith(selectedDate));
-  const pendingOrders = orders.filter(o => o.status !== 'entregado' && o.createdAt?.startsWith(selectedDate));
-  const totalRevenue = deliveredOrders.reduce((s, o) => s + o.total, 0);
-  const avgTicket = deliveredOrders.length > 0 ? totalRevenue / deliveredOrders.length : 0;
+  const pendingOrders   = orders.filter(o => o.status !== 'entregado'  && o.createdAt?.startsWith(selectedDate));
+  const totalRevenue    = deliveredOrders.reduce((s, o) => s + o.total, 0);
+  const avgTicket       = deliveredOrders.length > 0 ? totalRevenue / deliveredOrders.length : 0;
 
   const alreadyClosed = closedSales.find(s => s.date === selectedDate);
 
   const handleClose = () => {
-    const record = closeCashRegister(selectedDate);
-    setLastClosed(record);
+    closeCashRegister(selectedDate);
     setShowConfirm(false);
   };
 
@@ -32,137 +35,172 @@ export default function Caja() {
     .sort((a, b) => b.qty - a.qty)
     .slice(0, 5);
 
+  const stats = [
+    { icon: <TrendingUp size={28} />,  label: 'Ingresos del Día',    value: `$${totalRevenue.toLocaleString()}`,          color: '#27ae60', bg: '#eafaf1' },
+    { icon: <ShoppingBag size={28} />, label: 'Pedidos Entregados',  value: deliveredOrders.length,                       color: '#e67e22', bg: '#fff5eb' },
+    { icon: <DollarSign size={28} />,  label: 'Ticket Promedio',     value: `$${Math.round(avgTicket).toLocaleString()}`, color: '#2980b9', bg: '#eaf4fc' },
+    { icon: <ShoppingBag size={28} />, label: 'Pedidos Pendientes',  value: pendingOrders.length,                         color: '#8e44ad', bg: '#f5eef8' },
+  ];
+
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2><BarChart3 size={22} /> Caja y Reportes</h2>
-        <div className="form-group inline">
-          <label>Fecha:</label>
-          <input type="date" value={selectedDate} onChange={e => setSelectedDate(e.target.value)} />
-        </div>
-      </div>
+    <Box>
+      {/* Header */}
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3} flexWrap="wrap" gap={1}>
+        <Box display="flex" alignItems="center" gap={1}>
+          <BarChart3 size={24} color="#1a252f" />
+          <Typography variant="h5" fontWeight={700} color="secondary.main">Caja y Reportes</Typography>
+        </Box>
+        <TextField
+          type="date"
+          label="Fecha"
+          size="small"
+          value={selectedDate}
+          onChange={e => setSelectedDate(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+          sx={{ minWidth: 180 }}
+        />
+      </Box>
 
-      <div className="stats-grid">
-        <div className="stat-card" style={{ background: '#eafaf1' }}>
-          <TrendingUp size={28} color="#27ae60" />
-          <div>
-            <p className="stat-value">${totalRevenue.toLocaleString()}</p>
-            <p className="stat-label">Ingresos del Día</p>
-          </div>
-        </div>
-        <div className="stat-card" style={{ background: '#fff5eb' }}>
-          <ShoppingBag size={28} color="#e67e22" />
-          <div>
-            <p className="stat-value">{deliveredOrders.length}</p>
-            <p className="stat-label">Pedidos Entregados</p>
-          </div>
-        </div>
-        <div className="stat-card" style={{ background: '#eaf4fc' }}>
-          <DollarSign size={28} color="#2980b9" />
-          <div>
-            <p className="stat-value">${Math.round(avgTicket).toLocaleString()}</p>
-            <p className="stat-label">Ticket Promedio</p>
-          </div>
-        </div>
-        <div className="stat-card" style={{ background: '#fdf2f8' }}>
-          <ShoppingBag size={28} color="#8e44ad" />
-          <div>
-            <p className="stat-value">{pendingOrders.length}</p>
-            <p className="stat-label">Pedidos Pendientes</p>
-          </div>
-        </div>
-      </div>
+      {/* Stats */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', lg: 'repeat(4, 1fr)' }, gap: 2, mb: 4 }}>
+        {stats.map((s, i) => (
+          <Card key={i} sx={{ background: s.bg, border: 'none' }}>
+            <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2, py: '20px !important' }}>
+              <Box sx={{ color: s.color }}>{s.icon}</Box>
+              <Box>
+                <Typography variant="h5" fontWeight={700} color="secondary.main">{s.value}</Typography>
+                <Typography variant="caption" color="text.secondary">{s.label}</Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        ))}
+      </Box>
 
-      <div className="dashboard-panels">
-        <div className="panel">
-          <h3>Detalle de Pedidos Entregados</h3>
-          {deliveredOrders.length === 0 ? (
-            <p className="empty">No hay pedidos entregados para esta fecha</p>
-          ) : (
-            <table className="table">
-              <thead><tr><th>#</th><th>Mesa</th><th>Items</th><th>Total</th><th>Hora</th></tr></thead>
-              <tbody>
-                {deliveredOrders.map(o => (
-                  <tr key={o.id}>
-                    <td>#{o.id}</td>
-                    <td>Mesa {o.table}</td>
-                    <td>{o.items.reduce((s, i) => s + i.qty, 0)} items</td>
-                    <td>${o.total.toLocaleString()}</td>
-                    <td>{new Date(o.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}</td>
-                  </tr>
-                ))}
-                <tr className="table-total">
-                  <td colSpan={3}><strong>Total del día</strong></td>
-                  <td colSpan={2}><strong>${totalRevenue.toLocaleString()}</strong></td>
-                </tr>
-              </tbody>
-            </table>
-          )}
-        </div>
-
-        <div className="panel">
-          <h3>Platos Más Vendidos</h3>
-          {popularItems.length === 0 ? (
-            <p className="empty">Sin datos para esta fecha</p>
-          ) : (
-            <ul className="top-items">
-              {popularItems.map((item, i) => (
-                <li key={i} className="top-item">
-                  <span className="top-rank">#{i + 1}</span>
-                  <span className="top-name">{item.name}</span>
-                  <span className="top-qty">{item.qty} uds.</span>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <div className="close-register">
-            {alreadyClosed ? (
-              <div className="closed-notice">
-                <Lock size={16} /> Caja cerrada — Total: ${alreadyClosed.total.toLocaleString()}
-              </div>
+      {/* Panels */}
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3, mb: 3 }}>
+        {/* Delivered orders */}
+        <Card>
+          <CardContent>
+            <Typography variant="h6" fontWeight={600} mb={2}>Detalle de Pedidos Entregados</Typography>
+            {deliveredOrders.length === 0 ? (
+              <Typography color="text.disabled" textAlign="center" py={3}>No hay pedidos entregados para esta fecha</Typography>
             ) : (
-              <>
-                {!showConfirm ? (
-                  <button onClick={() => setShowConfirm(true)} className="btn-danger">
-                    <Lock size={16} /> Cerrar Caja del Día
-                  </button>
-                ) : (
-                  <div className="confirm-box">
-                    <p>¿Confirmar cierre de caja del <strong>{selectedDate}</strong>?</p>
-                    <p>Total a registrar: <strong>${totalRevenue.toLocaleString()}</strong></p>
-                    <div className="confirm-actions">
-                      <button onClick={() => setShowConfirm(false)} className="btn-secondary">Cancelar</button>
-                      <button onClick={handleClose} className="btn-danger">Confirmar Cierre</button>
-                    </div>
-                  </div>
-                )}
-              </>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>#</TableCell>
+                    <TableCell>Mesa</TableCell>
+                    <TableCell>Items</TableCell>
+                    <TableCell>Total</TableCell>
+                    <TableCell>Hora</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {deliveredOrders.map(o => (
+                    <TableRow key={o.id} hover>
+                      <TableCell>#{o.id}</TableCell>
+                      <TableCell>Mesa {o.table}</TableCell>
+                      <TableCell>{o.items.reduce((s, i) => s + i.qty, 0)} items</TableCell>
+                      <TableCell>${o.total.toLocaleString()}</TableCell>
+                      <TableCell>{new Date(o.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+                <TableFooter>
+                  <TableRow sx={{ '& td': { fontWeight: 700, bgcolor: 'grey.50', borderTop: '2px solid #e8eaed' } }}>
+                    <TableCell colSpan={3}>Total del día</TableCell>
+                    <TableCell colSpan={2}>${totalRevenue.toLocaleString()}</TableCell>
+                  </TableRow>
+                </TableFooter>
+              </Table>
             )}
-          </div>
-        </div>
-      </div>
+          </CardContent>
+        </Card>
 
-      <div className="panel">
-        <h3>Historial de Cierres de Caja</h3>
-        {closedSales.length === 0 ? (
-          <p className="empty">No hay cierres registrados</p>
-        ) : (
-          <table className="table">
-            <thead><tr><th>Fecha</th><th>Pedidos</th><th>Total</th><th>Hora de Cierre</th></tr></thead>
-            <tbody>
-              {closedSales.slice().reverse().map((s, i) => (
-                <tr key={i}>
-                  <td>{s.date}</td>
-                  <td>{s.orders}</td>
-                  <td><strong>${s.total.toLocaleString()}</strong></td>
-                  <td>{new Date(s.closedAt).toLocaleString('es-CO')}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-    </div>
+        {/* Top items + close */}
+        <Card>
+          <CardContent>
+            <Typography variant="h6" fontWeight={600} mb={2}>Platos Más Vendidos</Typography>
+            {popularItems.length === 0 ? (
+              <Typography color="text.disabled" textAlign="center" py={3}>Sin datos para esta fecha</Typography>
+            ) : (
+              <Stack spacing={1} mb={3}>
+                {popularItems.map((item, i) => (
+                  <Box key={i} display="flex" alignItems="center" gap={1.5} py={0.75}>
+                    <Chip label={`#${i + 1}`} size="small" color="primary" sx={{ minWidth: 36, fontWeight: 700 }} />
+                    <Typography variant="body2" sx={{ flex: 1 }}>{item.name}</Typography>
+                    <Typography variant="body2" color="text.secondary" fontWeight={600}>{item.qty} uds.</Typography>
+                  </Box>
+                ))}
+              </Stack>
+            )}
+
+            <Divider sx={{ mb: 2 }} />
+
+            {alreadyClosed ? (
+              <Alert severity="success" icon={<Lock size={16} />} sx={{ borderRadius: 2 }}>
+                Caja cerrada — Total: <strong>${alreadyClosed.total.toLocaleString()}</strong>
+              </Alert>
+            ) : (
+              <Button
+                variant="contained"
+                color="error"
+                fullWidth
+                startIcon={<Lock size={16} />}
+                onClick={() => setShowConfirm(true)}
+              >
+                Cerrar Caja del Día
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      </Box>
+
+      {/* History */}
+      <Card>
+        <CardContent>
+          <Typography variant="h6" fontWeight={600} mb={2}>Historial de Cierres de Caja</Typography>
+          {closedSales.length === 0 ? (
+            <Typography color="text.disabled" textAlign="center" py={3}>No hay cierres registrados</Typography>
+          ) : (
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Fecha</TableCell>
+                  <TableCell>Pedidos</TableCell>
+                  <TableCell>Total</TableCell>
+                  <TableCell>Hora de Cierre</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {closedSales.slice().reverse().map((s, i) => (
+                  <TableRow key={i} hover>
+                    <TableCell>{s.date}</TableCell>
+                    <TableCell>{s.orders}</TableCell>
+                    <TableCell><Typography fontWeight={700}>${s.total.toLocaleString()}</Typography></TableCell>
+                    <TableCell>{new Date(s.closedAt).toLocaleString('es-CO')}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Confirm dialog */}
+      <Dialog open={showConfirm} onClose={() => setShowConfirm(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Confirmar Cierre de Caja</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mt: 1, borderRadius: 2 }}>
+            ¿Confirmar cierre de caja del <strong>{selectedDate}</strong>?<br />
+            Total a registrar: <strong>${totalRevenue.toLocaleString()}</strong>
+          </Alert>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setShowConfirm(false)}>Cancelar</Button>
+          <Button variant="contained" color="error" onClick={handleClose}>Confirmar Cierre</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }

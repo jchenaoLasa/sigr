@@ -1,26 +1,31 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Plus, ShoppingCart, X, Minus, Check, ChevronRight } from 'lucide-react';
+import {
+  Box, Button, Card, CardContent, CardActions, Chip, Collapse, Typography,
+  Stack, Select, MenuItem, FormControl, InputLabel, Divider, IconButton,
+  Paper,
+} from '@mui/material';
+import { Plus, ShoppingCart, Minus, ChevronRight } from 'lucide-react';
 
-const STATUS_FLOW = ['pendiente', 'preparando', 'listo', 'entregado'];
+const STATUS_FLOW   = ['pendiente', 'preparando', 'listo', 'entregado'];
 const STATUS_LABELS = { pendiente: 'Pendiente', preparando: 'Preparando', listo: 'Listo', entregado: 'Entregado' };
-const STATUS_COLORS = { pendiente: '#e67e22', preparando: '#2980b9', listo: '#27ae60', entregado: '#7f8c8d' };
+const STATUS_COLOR  = { pendiente: 'warning', preparando: 'info', listo: 'success', entregado: 'default' };
 
 export default function Pedidos() {
   const { menu, categories, orders, addOrder, updateOrderStatus } = useApp();
-  const [showNew, setShowNew] = useState(false);
-  const [cart, setCart] = useState([]);
-  const [table, setTable] = useState('1');
+  const [showNew, setShowNew]         = useState(false);
+  const [cart, setCart]               = useState([]);
+  const [table, setTable]             = useState('1');
   const [filterStatus, setFilterStatus] = useState('todos');
 
-  const addToCart = (item) => {
+  const addToCart = (item) =>
     setCart(prev => {
       const ex = prev.find(c => c.id === item.id);
       return ex ? prev.map(c => c.id === item.id ? { ...c, qty: c.qty + 1 } : c) : [...prev, { ...item, qty: 1 }];
     });
-  };
 
-  const removeFromCart = (id) => setCart(prev => prev.map(c => c.id === id ? { ...c, qty: c.qty - 1 } : c).filter(c => c.qty > 0));
+  const removeFromCart = (id) =>
+    setCart(prev => prev.map(c => c.id === id ? { ...c, qty: c.qty - 1 } : c).filter(c => c.qty > 0));
 
   const cartTotal = cart.reduce((s, c) => s + c.price * c.qty, 0);
 
@@ -37,114 +42,159 @@ export default function Pedidos() {
     if (idx < STATUS_FLOW.length - 1) updateOrderStatus(order.id, STATUS_FLOW[idx + 1]);
   };
 
-  const filtered = filterStatus === 'todos' ? orders : orders.filter(o => o.status === filterStatus);
+  const filtered  = filterStatus === 'todos' ? orders : orders.filter(o => o.status === filterStatus);
   const availMenu = menu.filter(m => m.available);
   const getCatName = (id) => categories.find(c => c.id === id)?.name || '';
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>Gestión de Pedidos</h2>
-        <button className="btn-primary" onClick={() => setShowNew(!showNew)}>
-          <Plus size={16} /> Nuevo Pedido
-        </button>
-      </div>
+    <Box>
+      {/* Header */}
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3} flexWrap="wrap" gap={1}>
+        <Typography variant="h5" fontWeight={700} color="secondary.main">Gestión de Pedidos</Typography>
+        <Button variant="contained" startIcon={<Plus size={16} />} onClick={() => setShowNew(v => !v)}>
+          {showNew ? 'Cancelar' : 'Nuevo Pedido'}
+        </Button>
+      </Box>
 
-      {showNew && (
-        <div className="new-order-panel">
-          <div className="new-order-header">
-            <h3>Nuevo Pedido</h3>
-            <div className="form-group inline">
-              <label>Mesa:</label>
-              <select value={table} onChange={e => setTable(e.target.value)}>
-                {[1,2,3,4,5,6,7,8,9,10].map(n => <option key={n} value={n}>Mesa {n}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="order-builder">
-            <div className="menu-selector">
-              <h4>Seleccionar Platos</h4>
-              {categories.map(cat => {
-                const catItems = availMenu.filter(m => m.categoryId === cat.id);
-                if (catItems.length === 0) return null;
-                return (
-                  <div key={cat.id} className="cat-section">
-                    <p className="cat-label">{cat.name}</p>
-                    {catItems.map(item => (
-                      <div key={item.id} className="menu-row">
-                        <span className="menu-row-name">{item.name}</span>
-                        <span className="menu-row-price">${item.price.toLocaleString()}</span>
-                        <button onClick={() => addToCart(item)} className="btn-add"><Plus size={14} /></button>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })}
-            </div>
-            <div className="cart-panel">
-              <h4><ShoppingCart size={16} /> Carrito</h4>
-              {cart.length === 0 ? <p className="empty">Sin items</p> : (
-                <>
-                  {cart.map(item => (
-                    <div key={item.id} className="cart-item">
-                      <span className="cart-name">{item.name}</span>
-                      <div className="cart-controls">
-                        <button onClick={() => removeFromCart(item.id)} className="btn-icon"><Minus size={13} /></button>
-                        <span>{item.qty}</span>
-                        <button onClick={() => addToCart(item)} className="btn-icon"><Plus size={13} /></button>
-                      </div>
-                      <span className="cart-subtotal">${(item.price * item.qty).toLocaleString()}</span>
-                    </div>
+      {/* New order panel */}
+      <Collapse in={showNew}>
+        <Card sx={{ mb: 3 }}>
+          <CardContent>
+            <Box display="flex" alignItems="center" gap={3} mb={2} flexWrap="wrap">
+              <Typography variant="h6" fontWeight={600}>Nuevo Pedido</Typography>
+              <FormControl size="small" sx={{ minWidth: 140 }}>
+                <InputLabel>Mesa</InputLabel>
+                <Select label="Mesa" value={table} onChange={e => setTable(e.target.value)}>
+                  {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                    <MenuItem key={n} value={String(n)}>Mesa {n}</MenuItem>
                   ))}
-                  <div className="cart-total">
-                    <strong>Total: ${cartTotal.toLocaleString()}</strong>
-                    <button onClick={handleCreateOrder} className="btn-primary"><Check size={16} /> Confirmar</button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+                </Select>
+              </FormControl>
+            </Box>
 
-      <div className="filter-bar">
-        {['todos', ...STATUS_FLOW].map(s => (
-          <button key={s} className={`filter-btn ${filterStatus === s ? 'active' : ''}`} onClick={() => setFilterStatus(s)}>
-            {s === 'todos' ? 'Todos' : STATUS_LABELS[s]}
-          </button>
-        ))}
-      </div>
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 320px' }, gap: 2 }}>
+              {/* Menu selector */}
+              <Paper variant="outlined" sx={{ p: 2, maxHeight: 360, overflowY: 'auto', borderRadius: 2 }}>
+                <Typography variant="subtitle2" fontWeight={600} mb={1.5}>Seleccionar Platos</Typography>
+                {categories.map(cat => {
+                  const catItems = availMenu.filter(m => m.categoryId === cat.id);
+                  if (catItems.length === 0) return null;
+                  return (
+                    <Box key={cat.id} mb={2}>
+                      <Typography variant="caption" fontWeight={700} color="text.secondary" textTransform="uppercase" letterSpacing={0.5} display="block" mb={0.5}>
+                        {cat.name}
+                      </Typography>
+                      {catItems.map(item => (
+                        <Box
+                          key={item.id}
+                          display="flex" alignItems="center" gap={1} py={0.75} px={1}
+                          sx={{ borderRadius: 1, '&:hover': { bgcolor: 'grey.50' } }}
+                        >
+                          <Typography variant="body2" sx={{ flex: 1 }}>{item.name}</Typography>
+                          <Typography variant="body2" color="primary" fontWeight={600}>${item.price.toLocaleString()}</Typography>
+                          <IconButton
+                            size="small"
+                            onClick={() => addToCart(item)}
+                            sx={{ bgcolor: 'primary.main', color: 'white', width: 24, height: 24, '&:hover': { bgcolor: 'primary.dark' } }}
+                          >
+                            <Plus size={13} />
+                          </IconButton>
+                        </Box>
+                      ))}
+                    </Box>
+                  );
+                })}
+              </Paper>
 
-      <div className="orders-grid">
-        {filtered.length === 0 ? (
-          <p className="empty">No hay pedidos</p>
-        ) : (
-          filtered.slice().reverse().map(order => (
-            <div key={order.id} className="order-card">
-              <div className="order-card-header">
-                <span className="order-num">Pedido #{order.id}</span>
-                <span className="order-table">Mesa {order.table}</span>
-                <span className="status-badge" style={{ background: STATUS_COLORS[order.status] }}>
-                  {STATUS_LABELS[order.status]}
-                </span>
-              </div>
-              <ul className="order-items-list">
-                {order.items.map((item, i) => (
-                  <li key={i}>{item.qty}x {item.name} — ${(item.price * item.qty).toLocaleString()}</li>
-                ))}
-              </ul>
-              <div className="order-card-footer">
-                <strong>Total: ${order.total.toLocaleString()}</strong>
-                {order.status !== 'entregado' && (
-                  <button onClick={() => nextStatus(order)} className="btn-primary btn-sm">
-                    {STATUS_LABELS[STATUS_FLOW[STATUS_FLOW.indexOf(order.status) + 1]]} <ChevronRight size={14} />
-                  </button>
+              {/* Cart */}
+              <Paper variant="outlined" sx={{ p: 2, bgcolor: 'grey.50', borderRadius: 2 }}>
+                <Typography variant="subtitle2" fontWeight={600} display="flex" alignItems="center" gap={0.5} mb={1.5}>
+                  <ShoppingCart size={16} /> Carrito
+                </Typography>
+                {cart.length === 0 ? (
+                  <Typography variant="body2" color="text.disabled" textAlign="center" py={2}>Sin items</Typography>
+                ) : (
+                  <>
+                    <Stack spacing={1} mb={2}>
+                      {cart.map(item => (
+                        <Box key={item.id} display="flex" alignItems="center" gap={1}>
+                          <Typography variant="body2" sx={{ flex: 1 }}>{item.name}</Typography>
+                          <Box display="flex" alignItems="center" gap={0.5}>
+                            <IconButton size="small" onClick={() => removeFromCart(item.id)}><Minus size={12} /></IconButton>
+                            <Typography variant="body2" fontWeight={600}>{item.qty}</Typography>
+                            <IconButton size="small" onClick={() => addToCart(item)}><Plus size={12} /></IconButton>
+                          </Box>
+                          <Typography variant="body2" color="primary" fontWeight={600} minWidth={64} textAlign="right">
+                            ${(item.price * item.qty).toLocaleString()}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Stack>
+                    <Divider sx={{ mb: 1.5 }} />
+                    <Box display="flex" justifyContent="space-between" alignItems="center">
+                      <Typography fontWeight={700}>Total: ${cartTotal.toLocaleString()}</Typography>
+                      <Button variant="contained" size="small" onClick={handleCreateOrder}>Confirmar</Button>
+                    </Box>
+                  </>
                 )}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
+              </Paper>
+            </Box>
+          </CardContent>
+        </Card>
+      </Collapse>
+
+      {/* Filter chips */}
+      <Box display="flex" gap={1} mb={3} flexWrap="wrap">
+        {['todos', ...STATUS_FLOW].map(s => (
+          <Chip
+            key={s}
+            label={s === 'todos' ? 'Todos' : STATUS_LABELS[s]}
+            onClick={() => setFilterStatus(s)}
+            color={filterStatus === s ? 'primary' : 'default'}
+            variant={filterStatus === s ? 'filled' : 'outlined'}
+            clickable
+          />
+        ))}
+      </Box>
+
+      {/* Orders grid */}
+      {filtered.length === 0 ? (
+        <Typography color="text.disabled" textAlign="center" py={6}>No hay pedidos</Typography>
+      ) : (
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 2 }}>
+          {filtered.slice().reverse().map(order => (
+            <Card key={order.id}>
+              <CardContent>
+                <Box display="flex" alignItems="center" gap={1} mb={1.5} flexWrap="wrap">
+                  <Typography fontWeight={700}>Pedido #{order.id}</Typography>
+                  <Chip label={`Mesa ${order.table}`} size="small" variant="outlined" sx={{ fontSize: 11 }} />
+                  <Chip label={STATUS_LABELS[order.status]} size="small" color={STATUS_COLOR[order.status]} sx={{ ml: 'auto' }} />
+                </Box>
+                <Stack spacing={0.5}>
+                  {order.items.map((item, i) => (
+                    <Typography key={i} variant="body2" color="text.secondary">
+                      {item.qty}× {item.name} — ${(item.price * item.qty).toLocaleString()}
+                    </Typography>
+                  ))}
+                </Stack>
+              </CardContent>
+              <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
+                <Typography fontWeight={700}>Total: ${order.total.toLocaleString()}</Typography>
+                {order.status !== 'entregado' && (
+                  <Button
+                    variant="contained"
+                    size="small"
+                    endIcon={<ChevronRight size={14} />}
+                    onClick={() => nextStatus(order)}
+                  >
+                    {STATUS_LABELS[STATUS_FLOW[STATUS_FLOW.indexOf(order.status) + 1]]}
+                  </Button>
+                )}
+              </CardActions>
+            </Card>
+          ))}
+        </Box>
+      )}
+    </Box>
   );
 }

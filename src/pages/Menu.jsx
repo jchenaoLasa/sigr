@@ -1,36 +1,31 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Plus, Pencil, Trash2, X, Check, Tag } from 'lucide-react';
-
-function Modal({ title, onClose, children }) {
-  return (
-    <div className="modal-overlay">
-      <div className="modal">
-        <div className="modal-header">
-          <h3>{title}</h3>
-          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
+import {
+  Box, Button, Card, CardContent, CardActions, Chip, Dialog, DialogTitle,
+  DialogContent, DialogActions, IconButton, Stack, Tabs, Tab, Table, TableHead,
+  TableBody, TableRow, TableCell, TextField, FormControlLabel, Checkbox,
+  Select, MenuItem, FormControl, InputLabel, Typography, Tooltip,
+} from '@mui/material';
+import { Plus, Pencil, Trash2, Tag } from 'lucide-react';
 
 export default function MenuPage() {
-  const { user, menu, categories, addMenuItem, updateMenuItem, deleteMenuItem, addCategory, updateCategory, deleteCategory } = useApp();
+  const {
+    user, menu, categories,
+    addMenuItem, updateMenuItem, deleteMenuItem,
+    addCategory, updateCategory, deleteCategory,
+  } = useApp();
   const isAdmin = user?.role === 'admin';
 
-  const [activeTab, setActiveTab] = useState('menu');
-  const [filterCat, setFilterCat] = useState(0);
-  const [showModal, setShowModal] = useState(false);
-  const [editItem, setEditItem] = useState(null);
+  const [activeTab, setActiveTab]     = useState(0);
+  const [filterCat, setFilterCat]     = useState(0);
+  const [showModal, setShowModal]     = useState(false);
+  const [editItem, setEditItem]       = useState(null);
   const [showCatModal, setShowCatModal] = useState(false);
-  const [editCat, setEditCat] = useState(null);
-
-  const [form, setForm] = useState({ name: '', categoryId: categories[0]?.id || 1, price: '', description: '', available: true });
+  const [editCat, setEditCat]         = useState(null);
+  const [form, setForm]   = useState({ name: '', categoryId: categories[0]?.id || 1, price: '', description: '', available: true });
   const [catName, setCatName] = useState('');
 
-  const openAdd = () => { setEditItem(null); setForm({ name: '', categoryId: categories[0]?.id || 1, price: '', description: '', available: true }); setShowModal(true); };
+  const openAdd  = () => { setEditItem(null); setForm({ name: '', categoryId: categories[0]?.id || 1, price: '', description: '', available: true }); setShowModal(true); };
   const openEdit = (item) => { setEditItem(item); setForm({ ...item }); setShowModal(true); };
   const handleSave = () => {
     if (!form.name || !form.price) return;
@@ -39,7 +34,7 @@ export default function MenuPage() {
     setShowModal(false);
   };
 
-  const openAddCat = () => { setEditCat(null); setCatName(''); setShowCatModal(true); };
+  const openAddCat  = () => { setEditCat(null); setCatName(''); setShowCatModal(true); };
   const openEditCat = (cat) => { setEditCat(cat); setCatName(cat.name); setShowCatModal(true); };
   const handleSaveCat = () => {
     if (!catName.trim()) return;
@@ -47,131 +42,164 @@ export default function MenuPage() {
     setShowCatModal(false);
   };
 
-  const filtered = filterCat === 0 ? menu : menu.filter(m => m.categoryId === filterCat);
-  const getCatName = (id) => categories.find(c => c.id === id)?.name || '';
+  const filtered    = filterCat === 0 ? menu : menu.filter(m => m.categoryId === filterCat);
+  const getCatName  = (id) => categories.find(c => c.id === id)?.name || '';
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2>Menú Digital</h2>
+    <Box>
+      {/* Header */}
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3} flexWrap="wrap" gap={2}>
+        <Typography variant="h5" fontWeight={700} color="secondary.main">Menú Digital</Typography>
         {isAdmin && (
-          <div className="header-actions">
-            <button onClick={() => setActiveTab('categorias')} className={`btn-tab ${activeTab === 'categorias' ? 'active' : ''}`}>
-              <Tag size={16} /> Categorías
-            </button>
-            <button onClick={() => setActiveTab('menu')} className={`btn-tab ${activeTab === 'menu' ? 'active' : ''}`}>
-              Platos
-            </button>
-          </div>
+          <Tabs
+            value={activeTab}
+            onChange={(_, v) => setActiveTab(v)}
+            sx={{ '& .MuiTab-root': { textTransform: 'none', fontWeight: 600 } }}
+          >
+            <Tab label="Platos" />
+            <Tab label="Categorías" icon={<Tag size={14} />} iconPosition="start" />
+          </Tabs>
         )}
-      </div>
+      </Box>
 
-      {activeTab === 'menu' && (
+      {/* ── Platos tab ── */}
+      {activeTab === 0 && (
         <>
-          <div className="filter-bar">
-            <button className={`filter-btn ${filterCat === 0 ? 'active' : ''}`} onClick={() => setFilterCat(0)}>Todos</button>
+          <Box display="flex" gap={1} mb={3} flexWrap="wrap" alignItems="center">
+            <Chip
+              label="Todos"
+              onClick={() => setFilterCat(0)}
+              color={filterCat === 0 ? 'primary' : 'default'}
+              variant={filterCat === 0 ? 'filled' : 'outlined'}
+              clickable
+            />
             {categories.map(c => (
-              <button key={c.id} className={`filter-btn ${filterCat === c.id ? 'active' : ''}`} onClick={() => setFilterCat(c.id)}>{c.name}</button>
+              <Chip
+                key={c.id}
+                label={c.name}
+                onClick={() => setFilterCat(c.id)}
+                color={filterCat === c.id ? 'primary' : 'default'}
+                variant={filterCat === c.id ? 'filled' : 'outlined'}
+                clickable
+              />
             ))}
-            {isAdmin && <button className="btn-primary" onClick={openAdd}><Plus size={16} /> Nuevo Plato</button>}
-          </div>
+            {isAdmin && (
+              <Button variant="contained" startIcon={<Plus size={16} />} onClick={openAdd} sx={{ ml: 'auto' }}>
+                Nuevo Plato
+              </Button>
+            )}
+          </Box>
 
-          <div className="menu-grid">
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 2 }}>
             {filtered.map(item => (
-              <div key={item.id} className={`menu-card ${!item.available ? 'unavailable' : ''}`}>
-                <div className="menu-card-header">
-                  <span className="category-tag">{getCatName(item.categoryId)}</span>
-                  {!item.available && <span className="unavailable-tag">No disponible</span>}
-                </div>
-                <h4>{item.name}</h4>
-                <p className="menu-desc">{item.description}</p>
-                <div className="menu-card-footer">
-                  <span className="price">${item.price.toLocaleString()}</span>
+              <Card key={item.id} sx={{ opacity: item.available ? 1 : 0.55, display: 'flex', flexDirection: 'column' }}>
+                <CardContent sx={{ flex: 1 }}>
+                  <Box display="flex" gap={0.5} mb={1.5} flexWrap="wrap">
+                    <Chip label={getCatName(item.categoryId)} size="small" color="warning" variant="outlined" sx={{ fontSize: 11 }} />
+                    {!item.available && <Chip label="No disponible" size="small" color="error" variant="outlined" sx={{ fontSize: 11 }} />}
+                  </Box>
+                  <Typography variant="subtitle1" fontWeight={600} gutterBottom>{item.name}</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>{item.description}</Typography>
+                </CardContent>
+                <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
+                  <Typography variant="h6" color="primary" fontWeight={700}>${item.price.toLocaleString()}</Typography>
                   {isAdmin && (
-                    <div className="card-actions">
-                      <button onClick={() => openEdit(item)} className="btn-icon edit"><Pencil size={15} /></button>
-                      <button onClick={() => deleteMenuItem(item.id)} className="btn-icon delete"><Trash2 size={15} /></button>
-                    </div>
+                    <Box>
+                      <Tooltip title="Editar">
+                        <IconButton size="small" onClick={() => openEdit(item)} color="info"><Pencil size={15} /></IconButton>
+                      </Tooltip>
+                      <Tooltip title="Eliminar">
+                        <IconButton size="small" onClick={() => deleteMenuItem(item.id)} color="error"><Trash2 size={15} /></IconButton>
+                      </Tooltip>
+                    </Box>
                   )}
-                </div>
-              </div>
+                </CardActions>
+              </Card>
             ))}
-          </div>
+          </Box>
         </>
       )}
 
-      {activeTab === 'categorias' && isAdmin && (
-        <div className="panel">
-          <div className="panel-header">
-            <h3>Categorías</h3>
-            <button className="btn-primary" onClick={openAddCat}><Plus size={16} /> Nueva</button>
-          </div>
-          <table className="table">
-            <thead><tr><th>#</th><th>Nombre</th><th>Platos</th><th>Acciones</th></tr></thead>
-            <tbody>
-              {categories.map(c => (
-                <tr key={c.id}>
-                  <td>{c.id}</td>
-                  <td>{c.name}</td>
-                  <td>{menu.filter(m => m.categoryId === c.id).length}</td>
-                  <td>
-                    <button onClick={() => openEditCat(c)} className="btn-icon edit"><Pencil size={15} /></button>
-                    <button onClick={() => deleteCategory(c.id)} className="btn-icon delete"><Trash2 size={15} /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* ── Categorías tab ── */}
+      {activeTab === 1 && isAdmin && (
+        <Card>
+          <CardContent>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+              <Typography variant="h6" fontWeight={600}>Categorías</Typography>
+              <Button variant="contained" startIcon={<Plus size={16} />} onClick={openAddCat}>Nueva</Button>
+            </Box>
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>#</TableCell>
+                  <TableCell>Nombre</TableCell>
+                  <TableCell>Platos</TableCell>
+                  <TableCell align="right">Acciones</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {categories.map(c => (
+                  <TableRow key={c.id} hover>
+                    <TableCell>{c.id}</TableCell>
+                    <TableCell>{c.name}</TableCell>
+                    <TableCell>{menu.filter(m => m.categoryId === c.id).length}</TableCell>
+                    <TableCell align="right">
+                      <Tooltip title="Editar">
+                        <IconButton size="small" onClick={() => openEditCat(c)} color="info"><Pencil size={15} /></IconButton>
+                      </Tooltip>
+                      <Tooltip title="Eliminar">
+                        <IconButton size="small" onClick={() => deleteCategory(c.id)} color="error"><Trash2 size={15} /></IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       )}
 
-      {showModal && (
-        <Modal title={editItem ? 'Editar Plato' : 'Nuevo Plato'} onClose={() => setShowModal(false)}>
-          <div className="modal-body">
-            <div className="form-group">
-              <label>Nombre</label>
-              <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
-            </div>
-            <div className="form-group">
-              <label>Categoría</label>
-              <select value={form.categoryId} onChange={e => setForm(p => ({ ...p, categoryId: Number(e.target.value) }))}>
-                {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Precio</label>
-              <input type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} />
-            </div>
-            <div className="form-group">
-              <label>Descripción</label>
-              <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} rows={3} />
-            </div>
-            <div className="form-group checkbox">
-              <input type="checkbox" id="avail" checked={form.available} onChange={e => setForm(p => ({ ...p, available: e.target.checked }))} />
-              <label htmlFor="avail">Disponible</label>
-            </div>
-          </div>
-          <div className="modal-footer">
-            <button onClick={() => setShowModal(false)} className="btn-secondary">Cancelar</button>
-            <button onClick={handleSave} className="btn-primary"><Check size={16} /> Guardar</button>
-          </div>
-        </Modal>
-      )}
+      {/* ── Plato Dialog ── */}
+      <Dialog open={showModal} onClose={() => setShowModal(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>{editItem ? 'Editar Plato' : 'Nuevo Plato'}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} mt={1}>
+            <TextField label="Nombre" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} />
+            <FormControl size="small" fullWidth>
+              <InputLabel>Categoría</InputLabel>
+              <Select
+                label="Categoría"
+                value={form.categoryId}
+                onChange={e => setForm(p => ({ ...p, categoryId: Number(e.target.value) }))}
+              >
+                {categories.map(c => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
+              </Select>
+            </FormControl>
+            <TextField label="Precio" type="number" value={form.price} onChange={e => setForm(p => ({ ...p, price: e.target.value }))} />
+            <TextField label="Descripción" multiline rows={3} value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} />
+            <FormControlLabel
+              control={<Checkbox checked={form.available} onChange={e => setForm(p => ({ ...p, available: e.target.checked }))} color="primary" />}
+              label="Disponible"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setShowModal(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleSave}>Guardar</Button>
+        </DialogActions>
+      </Dialog>
 
-      {showCatModal && (
-        <Modal title={editCat ? 'Editar Categoría' : 'Nueva Categoría'} onClose={() => setShowCatModal(false)}>
-          <div className="modal-body">
-            <div className="form-group">
-              <label>Nombre</label>
-              <input value={catName} onChange={e => setCatName(e.target.value)} />
-            </div>
-          </div>
-          <div className="modal-footer">
-            <button onClick={() => setShowCatModal(false)} className="btn-secondary">Cancelar</button>
-            <button onClick={handleSaveCat} className="btn-primary"><Check size={16} /> Guardar</button>
-          </div>
-        </Modal>
-      )}
-    </div>
+      {/* ── Categoría Dialog ── */}
+      <Dialog open={showCatModal} onClose={() => setShowCatModal(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>{editCat ? 'Editar Categoría' : 'Nueva Categoría'}</DialogTitle>
+        <DialogContent>
+          <TextField sx={{ mt: 1 }} label="Nombre" value={catName} onChange={e => setCatName(e.target.value)} autoFocus />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setShowCatModal(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleSaveCat}>Guardar</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }

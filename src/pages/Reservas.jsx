@@ -1,37 +1,25 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Plus, Pencil, Trash2, X, Check, CalendarDays } from 'lucide-react';
+import {
+  Box, Button, Card, CardContent, CardActions, Chip, Dialog, DialogTitle,
+  DialogContent, DialogActions, IconButton, Stack, TextField, Select, MenuItem,
+  FormControl, Typography, Tooltip, List, ListItem, Divider,
+} from '@mui/material';
+import { Plus, Pencil, Trash2, CalendarDays, Users, Clock } from 'lucide-react';
 
-function Modal({ title, onClose, children }) {
-  return (
-    <div className="modal-overlay">
-      <div className="modal">
-        <div className="modal-header">
-          <h3>{title}</h3>
-          <button onClick={onClose} className="btn-icon"><X size={18} /></button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
-
-const EMPTY_FORM = { name: '', phone: '', email: '', date: '', time: '', guests: 2, notes: '' };
+const EMPTY_FORM  = { name: '', phone: '', email: '', date: '', time: '', guests: 2, notes: '' };
+const STATUS_COLOR = { confirmada: 'success', cancelada: 'error', completada: 'default' };
 
 export default function Reservas() {
   const { user, reservations, addReservation, updateReservation, deleteReservation } = useApp();
   const [showModal, setShowModal] = useState(false);
-  const [editItem, setEditItem] = useState(null);
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [editItem, setEditItem]   = useState(null);
+  const [form, setForm]           = useState(EMPTY_FORM);
   const [filterDate, setFilterDate] = useState('');
 
   const isAdmin = user?.role === 'admin' || user?.role === 'mesero';
 
-  const openAdd = () => {
-    setEditItem(null);
-    setForm({ ...EMPTY_FORM, name: user?.role === 'cliente' ? user.name : '' });
-    setShowModal(true);
-  };
+  const openAdd  = () => { setEditItem(null); setForm({ ...EMPTY_FORM, name: user?.role === 'cliente' ? user.name : '' }); setShowModal(true); };
   const openEdit = (r) => { setEditItem(r); setForm({ ...r }); setShowModal(true); };
 
   const handleSave = () => {
@@ -46,111 +34,168 @@ export default function Reservas() {
     : reservations;
 
   const filtered = filterDate ? myReservations.filter(r => r.date === filterDate) : myReservations;
-
-  const STATUS_COLORS = { confirmada: '#27ae60', cancelada: '#e74c3c', completada: '#7f8c8d' };
+  const sorted   = filtered.slice().sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time));
 
   return (
-    <div className="page">
-      <div className="page-header">
-        <h2><CalendarDays size={22} /> Reservas</h2>
-        <button className="btn-primary" onClick={openAdd}><Plus size={16} /> Nueva Reserva</button>
-      </div>
+    <Box>
+      {/* Header */}
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3} flexWrap="wrap" gap={1}>
+        <Box display="flex" alignItems="center" gap={1}>
+          <CalendarDays size={24} color="#1a252f" />
+          <Typography variant="h5" fontWeight={700} color="secondary.main">Reservas</Typography>
+        </Box>
+        <Button variant="contained" startIcon={<Plus size={16} />} onClick={openAdd}>Nueva Reserva</Button>
+      </Box>
 
-      <div className="filter-bar">
-        <div className="form-group inline">
-          <label>Filtrar por fecha:</label>
-          <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} />
-        </div>
-        {filterDate && <button className="btn-secondary" onClick={() => setFilterDate('')}>Limpiar</button>}
-        <span className="count-badge">{filtered.length} reserva(s)</span>
-      </div>
+      {/* Filter */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent sx={{ py: '12px !important' }}>
+          <Box display="flex" alignItems="center" gap={2} flexWrap="wrap">
+            <TextField
+              type="date"
+              label="Filtrar por fecha"
+              size="small"
+              value={filterDate}
+              onChange={e => setFilterDate(e.target.value)}
+              sx={{ minWidth: 200 }}
+              InputLabelProps={{ shrink: true }}
+            />
+            {filterDate && (
+              <Button variant="outlined" size="small" onClick={() => setFilterDate('')}>Limpiar</Button>
+            )}
+            <Chip label={`${sorted.length} reserva(s)`} color="info" size="small" sx={{ ml: 'auto' }} />
+          </Box>
+        </CardContent>
+      </Card>
 
-      {filtered.length === 0 ? (
-        <div className="empty-state">
-          <CalendarDays size={48} color="#bdc3c7" />
-          <p>No hay reservas {filterDate ? 'para esta fecha' : 'registradas'}</p>
-        </div>
+      {/* Content */}
+      {sorted.length === 0 ? (
+        <Box textAlign="center" py={8} color="text.disabled">
+          <CalendarDays size={56} />
+          <Typography mt={2}>No hay reservas {filterDate ? 'para esta fecha' : 'registradas'}</Typography>
+        </Box>
       ) : (
-        <div className="reservations-grid">
-          {filtered.slice().sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time)).map(r => (
-            <div key={r.id} className="reservation-card">
-              <div className="res-card-header">
-                <div>
-                  <p className="res-card-name">{r.name}</p>
-                  <p className="res-card-contact">{r.phone} {r.email ? `· ${r.email}` : ''}</p>
-                </div>
-                <span className="status-badge" style={{ background: STATUS_COLORS[r.status] || '#27ae60' }}>
-                  {r.status}
-                </span>
-              </div>
-              <div className="res-card-details">
-                <span>📅 {r.date}</span>
-                <span>🕐 {r.time}</span>
-                <span>👥 {r.guests} personas</span>
-              </div>
-              {r.notes && <p className="res-notes">"{r.notes}"</p>}
+        <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2 }}>
+          {sorted.map(r => (
+            <Card key={r.id}>
+              <CardContent>
+                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1.5}>
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight={600}>{r.name}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {r.phone}{r.email ? ` · ${r.email}` : ''}
+                    </Typography>
+                  </Box>
+                  <Chip label={r.status} size="small" color={STATUS_COLOR[r.status] || 'success'} />
+                </Box>
+
+                <Stack direction="row" spacing={2} flexWrap="wrap" mb={1}>
+                  <Box display="flex" alignItems="center" gap={0.5}>
+                    <CalendarDays size={13} color="#7f8c8d" />
+                    <Typography variant="body2" color="text.secondary">{r.date}</Typography>
+                  </Box>
+                  <Box display="flex" alignItems="center" gap={0.5}>
+                    <Clock size={13} color="#7f8c8d" />
+                    <Typography variant="body2" color="text.secondary">{r.time}</Typography>
+                  </Box>
+                  <Box display="flex" alignItems="center" gap={0.5}>
+                    <Users size={13} color="#7f8c8d" />
+                    <Typography variant="body2" color="text.secondary">{r.guests} personas</Typography>
+                  </Box>
+                </Stack>
+
+                {r.notes && (
+                  <Typography variant="body2" color="text.secondary" fontStyle="italic">"{r.notes}"</Typography>
+                )}
+              </CardContent>
+
               {(isAdmin || user?.name === r.clientName) && (
-                <div className="res-card-actions">
+                <CardActions sx={{ px: 2, pb: 2, pt: 0, gap: 1 }}>
                   {isAdmin && (
-                    <select value={r.status} onChange={e => updateReservation(r.id, { status: e.target.value })} className="status-select">
-                      <option value="confirmada">Confirmada</option>
-                      <option value="completada">Completada</option>
-                      <option value="cancelada">Cancelada</option>
-                    </select>
+                    <FormControl size="small" sx={{ flex: 1 }}>
+                      <Select
+                        value={r.status}
+                        onChange={e => updateReservation(r.id, { status: e.target.value })}
+                        size="small"
+                      >
+                        <MenuItem value="confirmada">Confirmada</MenuItem>
+                        <MenuItem value="completada">Completada</MenuItem>
+                        <MenuItem value="cancelada">Cancelada</MenuItem>
+                      </Select>
+                    </FormControl>
                   )}
-                  <button onClick={() => openEdit(r)} className="btn-icon edit"><Pencil size={15} /></button>
-                  <button onClick={() => deleteReservation(r.id)} className="btn-icon delete"><Trash2 size={15} /></button>
-                </div>
+                  <Tooltip title="Editar">
+                    <IconButton size="small" onClick={() => openEdit(r)} color="info"><Pencil size={15} /></IconButton>
+                  </Tooltip>
+                  <Tooltip title="Eliminar">
+                    <IconButton size="small" onClick={() => deleteReservation(r.id)} color="error"><Trash2 size={15} /></IconButton>
+                  </Tooltip>
+                </CardActions>
               )}
-            </div>
+            </Card>
           ))}
-        </div>
+        </Box>
       )}
 
-      {showModal && (
-        <Modal title={editItem ? 'Editar Reserva' : 'Nueva Reserva'} onClose={() => setShowModal(false)}>
-          <div className="modal-body">
-            <div className="form-row">
-              <div className="form-group">
-                <label>Nombre del cliente *</label>
-                <input value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} disabled={user?.role === 'cliente'} />
-              </div>
-              <div className="form-group">
-                <label>Teléfono</label>
-                <input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))} />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Fecha *</label>
-                <input type="date" value={form.date} onChange={e => setForm(p => ({ ...p, date: e.target.value }))} />
-              </div>
-              <div className="form-group">
-                <label>Hora *</label>
-                <input type="time" value={form.time} onChange={e => setForm(p => ({ ...p, time: e.target.value }))} />
-              </div>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>N° de personas *</label>
-                <input type="number" min="1" max="20" value={form.guests} onChange={e => setForm(p => ({ ...p, guests: e.target.value }))} />
-              </div>
-              <div className="form-group">
-                <label>Email</label>
-                <input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} />
-              </div>
-            </div>
-            <div className="form-group">
-              <label>Notas especiales</label>
-              <textarea value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} rows={2} />
-            </div>
-          </div>
-          <div className="modal-footer">
-            <button onClick={() => setShowModal(false)} className="btn-secondary">Cancelar</button>
-            <button onClick={handleSave} className="btn-primary"><Check size={16} /> Guardar</button>
-          </div>
-        </Modal>
-      )}
-    </div>
+      {/* Dialog */}
+      <Dialog open={showModal} onClose={() => setShowModal(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>{editItem ? 'Editar Reserva' : 'Nueva Reserva'}</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 1 }}>
+            <TextField
+              label="Nombre del cliente *"
+              value={form.name}
+              onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+              disabled={user?.role === 'cliente'}
+              sx={{ gridColumn: '1 / -1' }}
+            />
+            <TextField
+              label="Teléfono"
+              value={form.phone}
+              onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+            />
+            <TextField
+              label="Email"
+              type="email"
+              value={form.email}
+              onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
+            />
+            <TextField
+              label="Fecha *"
+              type="date"
+              value={form.date}
+              onChange={e => setForm(p => ({ ...p, date: e.target.value }))}
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="Hora *"
+              type="time"
+              value={form.time}
+              onChange={e => setForm(p => ({ ...p, time: e.target.value }))}
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="N° de personas *"
+              type="number"
+              inputProps={{ min: 1, max: 20 }}
+              value={form.guests}
+              onChange={e => setForm(p => ({ ...p, guests: e.target.value }))}
+            />
+            <TextField
+              label="Notas especiales"
+              multiline
+              rows={2}
+              value={form.notes}
+              onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
+              sx={{ gridColumn: '1 / -1' }}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setShowModal(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleSave}>Guardar</Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 }
